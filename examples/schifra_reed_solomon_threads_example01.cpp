@@ -112,6 +112,7 @@ public:
             }
          }
       }
+
       timer.stop();
       total_time_ = timer.time();
    }
@@ -177,7 +178,6 @@ int main()
    generate_messages(data_length,message_list);
 
    const unsigned int max_thread_count = 8; // number of functional cores.
-   std::vector<process_ptr_type> process_list;
    std::vector<std::future<void>> thread_handles;
 
    schifra::utils::timer timer;
@@ -185,14 +185,14 @@ int main()
 
    for (unsigned int i = 0; i < max_thread_count; ++i)
    {
-      auto process = process_ptr_type(new process_type(i,encoder,decoder,message_list));
-      process_list.push_back(process);
+      auto process = std::make_shared<process_type>(i,encoder,decoder,message_list);
       auto handle = std::async(std::launch::async, [process]{ process->execute(); });
       thread_handles.push_back(std::move(handle));
    }
 
-   for( auto& handle : thread_handles ) {
-     handle.wait();
+   for (auto& handle : thread_handles)
+   {
+      handle.wait();
    }
 
    timer.stop();
@@ -204,3 +204,4 @@ int main()
 
    return 0;
 }
+
