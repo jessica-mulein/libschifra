@@ -35,9 +35,8 @@
 #include <string>
 #include <limits>
 
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
+#include <memory>
+#include <future>
 
 #include "schifra_galois_field.hpp"
 #include "schifra_galois_field_polynomial.hpp"
@@ -167,7 +166,7 @@ int main()
    typedef schifra::reed_solomon::encoder<code_length,fec_length> encoder_type;
    typedef schifra::reed_solomon::decoder<code_length,fec_length> decoder_type;
    typedef process<encoder_type,decoder_type>                     process_type;
-   typedef boost::shared_ptr<process_type>                        process_ptr_type;
+   typedef std::shared_ptr<process_type>                          process_ptr_type;
 
    /* Instantiate Encoder and Decoder (Codec) */
    encoder_type encoder(field,generator_polynomial);
@@ -177,26 +176,27 @@ int main()
 
    generate_messages(data_length,message_list);
 
-   const unsigned int max_thread_count = 4; // number of functional cores.
+   const unsigned int max_thread_count = 8; // number of functional cores.
    std::vector<process_ptr_type> process_list;
+   std::vector<std::future<void>> thread_handles;
 
-   boost::thread_group threads;
+   schifra::utils::timer timer;
+   timer.start();
 
    for (unsigned int i = 0; i < max_thread_count; ++i)
    {
-      process_list.push_back(process_ptr_type(new process_type(i,encoder,decoder,message_list)));
-      threads.create_thread(boost::bind(&process_type::execute,process_list[i]));
+      auto process = process_ptr_type(new process_type(i,encoder,decoder,message_list));
+      process_list.push_back(process);
+      auto handle = std::async(std::launch::async, [process]{ process->execute(); });
+      thread_handles.push_back(std::move(handle));
    }
 
-   threads.join_all();
-
-   double time = -1.0;
-
-   /* Determine the process with the longest running time. */
-   for (std::size_t i = 0; i < process_list.size(); ++i)
-   {
-      time = ((time < process_list[i]->time()) ? process_list[i]->time() : time);
+   for( auto& handle : thread_handles ) {
+     handle.wait();
    }
+
+   timer.stop();
+   auto time = timer.time();
 
    double mbps = (max_thread_count * round_count * message_list.size() * data_length * 8.0) / (1048576.0 * time);
 
@@ -204,4 +204,3 @@ int main()
 
    return 0;
 }
-

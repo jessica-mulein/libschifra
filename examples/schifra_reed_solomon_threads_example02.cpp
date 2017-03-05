@@ -35,9 +35,8 @@
 #include <iostream>
 #include <string>
 
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread/thread.hpp>
+#include <memory>
+#include <future>
 
 #include "schifra_galois_field.hpp"
 #include "schifra_galois_field_polynomial.hpp"
@@ -111,7 +110,7 @@ public:
          /* Add Erasures - Simulate network packet loss (e.g: UDP) */
          schifra::reed_solomon::erasure_locations_t missing_row_index;
          missing_row_index.clear();
-         for (std::size_t i = 0; i < fec_length; ++i)
+         for (std::size_t i = 0; i < fec_length/2; ++i)
          {
             std::size_t missing_index = (k + (i * 4)) % stack_size;
             block_stack[missing_index].clear();
@@ -178,33 +177,34 @@ int main()
    typedef schifra::reed_solomon::erasure_code_decoder<code_length,fec_length> decoder_type;
 
    typedef erasure_process<encoder_type,decoder_type> erasure_process_type;
-   typedef boost::shared_ptr<erasure_process_type>    erasure_process_ptr_type;
+   typedef std::shared_ptr<erasure_process_type>    erasure_process_ptr_type;
 
    /* Instantiate Encoder and Decoder (Codec) */
    encoder_type encoder(field,generator_polynomial);
    decoder_type decoder(field,generator_polynomial_index);
 
-   const unsigned int max_thread_count = 4; // number of functional cores.
+   const unsigned int max_thread_count = 8; // number of functional cores.
 
    std::vector<erasure_process_ptr_type> erasure_process_list;
+   std::vector<std::future<void>> thread_handles;
 
-   boost::thread_group threads;
+   schifra::utils::timer timer;
+   timer.start();
 
    for (unsigned int i = 0; i < max_thread_count; ++i)
    {
-      erasure_process_list.push_back(erasure_process_ptr_type(new erasure_process_type(i,encoder,decoder)));
-      threads.create_thread(boost::bind(&erasure_process_type::execute,erasure_process_list[i]));
+	   auto process = erasure_process_ptr_type(new erasure_process_type(i, encoder, decoder));
+	   erasure_process_list.push_back(process);
+	   auto handle = std::async(std::launch::async, [process] { process->execute(); });
+	   thread_handles.push_back(std::move(handle));
    }
 
-   threads.join_all();
-
-   double time = -1.0;
-
-   /* Determine the process with the longest running time. */
-   for (std::size_t i = 0; i < erasure_process_list.size(); ++i)
-   {
-      time = ((time < erasure_process_list[i]->time()) ? erasure_process_list[i]->time() : time);
+   for (auto& handle : thread_handles) {
+	   handle.wait();
    }
+
+   timer.stop();
+   auto time = timer.time();
 
    double mbps = (max_thread_count * round_count * 8.0 * code_length * data_length) / (1048576.0 * time);
 
