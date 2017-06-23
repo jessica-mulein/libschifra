@@ -59,6 +59,16 @@ namespace schifra
             }
          };
 
+         decoder(const decoder && rhs) :
+            decoder_valid_{rhs.decoder_valid_ },
+            field_{rhs.field_ },
+            root_exponent_table_{std::move(rhs.root_exponent_table_)},
+            syndrome_exponent_table_{std::move(rhs.syndrome_exponent_table_)},
+            gamma_table_{std::move(syndrome_exponent_table_)},
+            X_{rhs.X_},
+            gen_initial_index_{rhs.gen_initial_index_ }
+         {       }
+
          bool decode(block_type& rsblock) const
          {
             std::vector<std::size_t> erasure_list;
