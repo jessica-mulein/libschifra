@@ -21,7 +21,7 @@
 
 
 /*
-   Description: This example will demonstrate how to instantiate a 14-bit per
+   Description: This example will demonstrate how to instantiate a 16-bit per
                 symbol Reed-Solomon encoder and decoder, add the full amount
                 of possible errors, correct the errors, and output the various
                 pieces of relevant information. Furthermore this example will
@@ -43,34 +43,24 @@
 #include "schifra_reed_solomon_decoder.hpp"
 #include "schifra_reed_solomon_block.hpp"
 #include "schifra_error_processes.hpp"
-#include "schifra_reed_solomon_bitio.hpp"
 
 
 int main()
 {
    /* Finite Field Parameters */
-   const std::size_t field_descriptor                =  14;
-   const std::size_t generator_polynomial_index      = 120;
-   const std::size_t generator_polynomial_root_count = 100;
+   const std::size_t field_descriptor                =   16;
+   const std::size_t generator_polynomial_index      =    0;
+   const std::size_t generator_polynomial_root_count = 1000;
 
    /* Reed Solomon Code Parameters */
-   const std::size_t code_length = 16383; //(2^14 - 1)
-   const std::size_t fec_length  =   100;
+   const std::size_t code_length = 65535;
+   const std::size_t fec_length  =  1000;
    const std::size_t data_length = code_length - fec_length;
-
-   /* 14-bit Symbol Mask Parameter */
-   const int mask = 0x00003FFF;
-
-   /*
-     Note: One must make sure to be using primitive polynomials
-           of correct degree for generating elements in the specified
-           field ie: a primitive polynomial of degree 14 for GF(2^14).
-   */
 
    /* Instantiate Finite Field and Generator Polynomials */
    const schifra::galois::field field(field_descriptor,
-                                      schifra::galois::primitive_polynomial_size12,
-                                      schifra::galois::primitive_polynomial12);
+                                      schifra::galois::primitive_polynomial_size14,
+                                      schifra::galois::primitive_polynomial14);
 
    schifra::galois::field_polynomial generator_polynomial(field);
 
@@ -86,29 +76,21 @@ int main()
    }
 
    /* Instantiate Encoder and Decoder (Codec) */
-   typedef schifra::reed_solomon::encoder<code_length,fec_length> encoder_t;
-   typedef schifra::reed_solomon::decoder<code_length,fec_length> decoder_t;
+   typedef schifra::reed_solomon::encoder<code_length,fec_length,data_length> encoder_t;
+   typedef schifra::reed_solomon::decoder<code_length,fec_length,data_length> decoder_t;
 
-   const encoder_t encoder(field,generator_polynomial);
-   const decoder_t decoder(field,generator_polynomial_index);
+   const encoder_t encoder(field, generator_polynomial);
+   const decoder_t decoder(field, generator_polynomial_index);
 
-   /*
-     Note: The data length represents the number of code symbols that will be used.
-           The effective data length is then the number of code symbols multipled
-           by the number of bits per symbol, in this case it is 14-bits per code
-           symbol.
-   */
+   std::vector<unsigned int> data(code_length, 0x0000 & field.mask());
 
    /* Instantiate RS Block For Codec */
    schifra::reed_solomon::block<code_length,fec_length> block;
    schifra::reed_solomon::block<code_length,fec_length> original_block;
 
-   /* Populate RS Blocks with 14-bit data symbols */
-   for (std::size_t i = 0; i < data_length; ++i)
-   {
-      block[i] = static_cast<int>(i & mask);
-      original_block[i] = static_cast<int>(i & mask);
-   }
+   schifra::reed_solomon::copy(&data[0], data.size(), block);
+
+   original_block = block;
 
    /* Transform message into Reed-Solomon encoded codeword */
    if (!encoder.encode(block))
@@ -119,7 +101,7 @@ int main()
    }
 
    /* Add errors at every 3rd location starting at position zero */
-   schifra::corrupt_message_all_errors_wth_mask(block, 0, mask, 3);
+   schifra::corrupt_message_all_errors_wth_mask(block, 0, field.mask(), 3);
 
    if (!decoder.decode(block))
    {
@@ -127,19 +109,19 @@ int main()
                 << "Msg: " << block.error_as_string()  << std::endl;
       return 1;
    }
-   else if (!schifra::are_blocks_equivelent(block, original_block, data_length))
+   else if (!schifra::are_blocks_equivelent(block, original_block, true, true))
    {
       std::cout << "Error - Error correction failed!" << std::endl;
       return 1;
    }
 
-   std::cout << "Encoder Parameters [" << schifra::reed_solomon::encoder<code_length,fec_length>::trait::code_length << ","
-                                       << schifra::reed_solomon::encoder<code_length,fec_length>::trait::data_length << ","
-                                       << schifra::reed_solomon::encoder<code_length,fec_length>::trait::fec_length  << "]" << std::endl;
+   std::cout << "Encoder Parameters [" << encoder_t::trait::code_length << ","
+                                       << encoder_t::trait::data_length << ","
+                                       << encoder_t::trait::fec_length  << "]" << std::endl;
 
-   std::cout << "Decoder Parameters [" << schifra::reed_solomon::decoder<code_length,fec_length>::trait::code_length << ","
-                                       << schifra::reed_solomon::decoder<code_length,fec_length>::trait::data_length << ","
-                                       << schifra::reed_solomon::decoder<code_length,fec_length>::trait::fec_length  << "]" << std::endl;
+   std::cout << "Decoder Parameters [" << decoder_t::trait::code_length << ","
+                                       << decoder_t::trait::data_length << ","
+                                       << decoder_t::trait::fec_length  << "]" << std::endl;
 
    return 0;
 }
