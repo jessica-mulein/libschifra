@@ -179,15 +179,9 @@ int main()
    typedef schifra::reed_solomon::erasure_code_decoder<code_length,fec_length> decoder_type;
 
    typedef erasure_process<encoder_type,decoder_type> erasure_process_type;
-<<<<<<< HEAD:examples/schifra_reed_solomon_threads_example02.cpp
    typedef std::shared_ptr<erasure_process_type>    erasure_process_ptr_type;
 
-   const unsigned int max_thread_count = 8; // number of functional cores.
-=======
-   typedef boost::shared_ptr<erasure_process_type>    erasure_process_ptr_type;
-
    const unsigned int max_thread_count = 4; // number of functional cores.
->>>>>>> upstream/master:schifra_reed_solomon_threads_example02.cpp
 
    std::vector<std::future<void>> thread_handles;
 
@@ -196,20 +190,6 @@ int main()
 
    for (unsigned int i = 0; i < max_thread_count; ++i)
    {
-<<<<<<< HEAD:examples/schifra_reed_solomon_threads_example02.cpp
-=======
-      erasure_process_list.push_back(erasure_process_ptr_type(new
-                                     erasure_process_type
-                                     (
-                                       i,
-                                       field,
-                                       generator_polynomial,
-                                       generator_polynomial_index
-                                     )));
-
-      threads.create_thread(boost::bind(&erasure_process_type::execute,erasure_process_list[i]));
-   }
->>>>>>> upstream/master:schifra_reed_solomon_threads_example02.cpp
 
       auto process = std::make_shared<erasure_process_type>
                           (i, field, generator_polynomial, generator_polynomial_index);

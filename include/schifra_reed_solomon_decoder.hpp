@@ -57,22 +57,10 @@ namespace schifra
             }
          };
 
-<<<<<<< HEAD:include/schifra_reed_solomon_decoder.hpp
-         decoder(const decoder && rhs) :
-            decoder_valid_{rhs.decoder_valid_ },
-            field_{rhs.field_ },
-            root_exponent_table_{std::move(rhs.root_exponent_table_)},
-            syndrome_exponent_table_{std::move(rhs.syndrome_exponent_table_)},
-            gamma_table_{std::move(syndrome_exponent_table_)},
-            X_{rhs.X_},
-            gen_initial_index_{rhs.gen_initial_index_ }
-         {       }
-=======
          const galois::field& field() const
          {
             return field_;
          }
->>>>>>> upstream/master:schifra_reed_solomon_decoder.hpp
 
          bool decode(block_type& rsblock) const
          {
@@ -389,10 +377,7 @@ namespace schifra
             else
             {
                rsblock.unrecoverable = true;
-<<<<<<< HEAD:include/schifra_reed_solomon_decoder.hpp
-=======
                rsblock.error         = block_type::e_decoder_error4;
->>>>>>> upstream/master:schifra_reed_solomon_decoder.hpp
                return false;
             }
          }
