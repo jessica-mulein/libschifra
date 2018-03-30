@@ -1,3 +1,4 @@
 add_executable(schifra_reed_solomon_codec_validation schifra_reed_solomon_codec_validation.cpp)
 add_executable(schifra_reed_solomon_speed_evaluation schifra_reed_solomon_speed_evaluation.cpp)
 install(TARGETS schifra_reed_solomon_codec_validation schifra_reed_solomon_speed_evaluation DESTINATION tests)
+add_test(NAME CODEC_VALIDATION COMMAND schifra_reed_solomon_codec_validation -s WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

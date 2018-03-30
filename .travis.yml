@@ -1,11 +1,19 @@
 language: cpp
 
-sudo: required
-
+sudo: false
 dist: trusty
 
 compiler:
   - gcc
 
-script:
-  - make clean all
+    
+script: 
+  ############################################################################ 
+  # Builds and tests 
+  ############################################################################ 
+  - mkdir -p build 
+  - cd build 
+  - cmake .. -DCMAKE_BUILD_TYPE=Release  
+  - cmake --build . -- -j 
+  - ctest 
+
