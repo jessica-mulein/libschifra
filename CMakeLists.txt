@@ -16,5 +16,5 @@ if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
 
-files(GLOB files "${CMAKE_SOURCE_DIR}/include/*")S
+file(GLOB files "${CMAKE_SOURCE_DIR}/include/*")
 install(FILES ${files} DESTINATION include)
