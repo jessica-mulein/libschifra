@@ -52,6 +52,12 @@ namespace schifra
            field_(gfield),
            generator_(generator)
          {}
+          
+         encoder( const encoder&& rhs) :
+                    encoder_valid_(rhs.encoder_valid_),
+                    field_(rhs.field_),
+                    generator_(std::move(rhs.generator_))
+        {  }
 
         ~encoder()
          {}

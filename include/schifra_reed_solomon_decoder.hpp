@@ -57,6 +57,16 @@ namespace schifra
             }
          };
 
+         decoder( const decoder && rhs) :
+                    decoder_valid_{rhs.decoder_valid_},
+          field_{std::move(rhs.field_)},
+                    root_exponent_table_{std::move(rhs.root_exponent_table_)},
+                    syndrome_exponent_table_{std::move(rhs.syndrome_exponent_table_)},
+                    gamma_table_{std::move(rhs.gamma_table_)},
+                    X_{std::move(rhs.X_)},
+                    gen_initial_index_{rhs.gen_initial_index_}
+         {       }
+          
          const galois::field& field() const
          {
             return field_;
