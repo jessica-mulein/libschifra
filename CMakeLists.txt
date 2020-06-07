@@ -1,5 +1,5 @@
-cmake_minimum_required (VERSION 2.8)
-cmake_policy(SET CMP0054 OLD)
+cmake_minimum_required (VERSION 3.1)
+cmake_policy(SET CMP0054 NEW)
 
 project ("Schiffra RS LIB")
 set(CMAKE_BUILD_TYPE Release)
